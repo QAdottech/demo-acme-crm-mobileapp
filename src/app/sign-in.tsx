@@ -2,6 +2,7 @@ import { useSession } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/layout/Logo';
+import { useTheme } from '@/context/ThemeContext';
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +41,7 @@ export default function SignInScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-brand-900"
+      className="flex-1 bg-slate-50 dark:bg-brand-900"
     >
       <ScrollView
         contentContainerStyle={{
@@ -54,17 +56,17 @@ export default function SignInScreen() {
         {/* Logo */}
         <View className="items-center mb-12">
           <Logo size="lg" />
-          <Text className="text-slate-400 text-sm mt-3">
+          <Text className="text-slate-500 dark:text-slate-400 text-sm mt-3">
             Sales Pipeline Management
           </Text>
         </View>
 
         {/* Login Card */}
-        <View className="bg-slate-800/50 rounded-3xl p-6 border border-slate-700/50">
-          <Text className="text-white text-2xl font-bold mb-1">
+        <View className="rounded-3xl p-6 border bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50">
+          <Text className="text-slate-900 dark:text-white text-2xl font-bold mb-1">
             Welcome back
           </Text>
-          <Text className="text-slate-400 text-sm mb-6">
+          <Text className="text-slate-500 dark:text-slate-400 text-sm mb-6">
             Sign in to your account
           </Text>
 
@@ -88,8 +90,13 @@ export default function SignInScreen() {
           />
 
           {error ? (
-            <View className="bg-red-500/10 rounded-xl p-3 mb-4 border border-red-500/20">
-              <Text className="text-red-400 text-sm text-center">{error}</Text>
+            <View
+              className="rounded-xl p-3 mb-4 border"
+              style={{ backgroundColor: colors.errorBg, borderColor: colors.errorBorder }}
+            >
+              <Text style={{ color: colors.errorText }} className="text-sm text-center">
+                {error}
+              </Text>
             </View>
           ) : null}
 
@@ -102,7 +109,7 @@ export default function SignInScreen() {
 
         {/* Demo hint */}
         <View className="items-center mt-6">
-          <Text className="text-slate-500 text-xs">
+          <Text className="text-slate-400 dark:text-slate-500 text-xs">
             Demo credentials: demo@acme.com / demo1234
           </Text>
         </View>

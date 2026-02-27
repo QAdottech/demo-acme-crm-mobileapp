@@ -34,7 +34,7 @@ export default function PipelineScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-brand-900">
+    <View className="flex-1 bg-slate-50 dark:bg-brand-900">
       <Header />
 
       {/* Stats Row */}
@@ -43,12 +43,12 @@ export default function PipelineScreen() {
           <Card key={stat.label} className="flex-1 py-3 px-3">
             <View className="flex-row items-center mb-1">
               <Ionicons name={stat.icon} size={14} color={stat.color} />
-              <Text className="text-slate-400 text-[10px] ml-1">
+              <Text className="text-slate-500 dark:text-slate-400 text-[10px] ml-1">
                 {stat.label}
               </Text>
             </View>
             <Text
-              className="text-white font-bold"
+              className="text-slate-900 dark:text-white font-bold"
               style={{ fontSize: stat.label === 'Pipeline Value' ? 14 : 18 }}
               numberOfLines={1}
             >
@@ -61,7 +61,7 @@ export default function PipelineScreen() {
       {/* Pipeline Board */}
       <PipelineBoard
         onDealPress={(dealId) =>
-          router.push(`/(app)/deal/${dealId}` as `/${string}`)
+          router.push(`/(app)/deal/${dealId}` as any)
         }
       />
     </View>

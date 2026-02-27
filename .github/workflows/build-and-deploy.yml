@@ -46,46 +46,46 @@ jobs:
         run: eas build --platform android --profile preview --non-interactive --no-wait
 
   # ------------------------------------------------------------------
-  # Job 3: Build iOS via EAS
+  # Job 3: Build iOS via EAS (commented out)
   # ------------------------------------------------------------------
-  build-ios:
-    name: Build iOS
-    needs: quality-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-      - run: npm ci
-      - name: Build iOS
-        run: eas build --platform ios --profile production --non-interactive --no-wait
+  # build-ios:
+  #   name: Build iOS
+  #   needs: quality-check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - uses: expo/expo-github-action@v8
+  #       with:
+  #         eas-version: latest
+  #         token: ${{ secrets.EXPO_TOKEN }}
+  #     - run: npm ci
+  #     - name: Build iOS
+  #       run: eas build --platform ios --profile production --non-interactive --no-wait
 
   # ------------------------------------------------------------------
-  # Job 4: Submit to Apple TestFlight
+  # Job 4: Submit to Apple TestFlight (commented out)
   # ------------------------------------------------------------------
-  submit-testflight:
-    name: Submit to TestFlight
-    needs: build-ios
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-      - run: npm ci
-      - name: Submit to TestFlight
-        run: eas submit --platform ios --profile production --non-interactive --latest
+  # submit-testflight:
+  #   name: Submit to TestFlight
+  #   needs: build-ios
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - uses: expo/expo-github-action@v8
+  #       with:
+  #         eas-version: latest
+  #         token: ${{ secrets.EXPO_TOKEN }}
+  #     - run: npm ci
+  #     - name: Submit to TestFlight
+  #       run: eas submit --platform ios --profile production --non-interactive --latest
 
   # ------------------------------------------------------------------
   # Job 5: Submit to Google Play (internal testing track)
@@ -113,7 +113,7 @@ jobs:
   # ------------------------------------------------------------------
   upload-qatech:
     name: Upload to QA.tech
-    needs: [build-android, build-ios]
+    needs: [build-android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
