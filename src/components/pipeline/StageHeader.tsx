@@ -22,7 +22,7 @@ export function StageHeader({
           className="w-3 h-3 rounded-full mr-2"
           style={{ backgroundColor: color }}
         />
-        <Text className="text-white font-bold text-base flex-1">{label}</Text>
+        <Text className="text-slate-900 dark:text-white font-bold text-base flex-1">{label}</Text>
         <View
           className="rounded-full px-2.5 py-0.5"
           style={{ backgroundColor: `${color}25` }}
@@ -32,7 +32,7 @@ export function StageHeader({
           </Text>
         </View>
       </View>
-      <Text className="text-slate-400 text-xs ml-5">
+      <Text className="text-slate-500 dark:text-slate-400 text-xs ml-5">
         {formatCurrency(totalValue)}
       </Text>
     </View>

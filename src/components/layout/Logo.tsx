@@ -1,11 +1,14 @@
 import React from 'react';
 import { Text, View } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface LogoProps {
   size?: 'sm' | 'lg';
 }
 
 export function Logo({ size = 'sm' }: LogoProps) {
+  const { colors } = useTheme();
+
   return (
     <View className="flex-row items-center">
       {/* Signal bars icon */}
@@ -17,7 +20,7 @@ export function Logo({ size = 'sm' }: LogoProps) {
             style={{
               width: size === 'lg' ? 5 : 3,
               height: size === 'lg' ? h : h * 0.6,
-              backgroundColor: '#6366F1',
+              backgroundColor: colors.logoBar,
               opacity: 0.5 + i * 0.12,
             }}
           />
@@ -25,18 +28,22 @@ export function Logo({ size = 'sm' }: LogoProps) {
       </View>
       <View>
         <Text
-          className="font-bold text-slate-300"
+          className="font-bold"
           style={{
             fontSize: size === 'lg' ? 22 : 14,
             letterSpacing: size === 'lg' ? 3 : 2,
+            color: colors.logoText,
           }}
         >
           ACME Signal
         </Text>
         {size === 'lg' && (
           <Text
-            className="text-slate-500 text-xs"
-            style={{ letterSpacing: 1.5 }}
+            className="text-xs"
+            style={{
+              letterSpacing: 1.5,
+              color: colors.logoSubtext,
+            }}
           >
             CRM System Demo
           </Text>

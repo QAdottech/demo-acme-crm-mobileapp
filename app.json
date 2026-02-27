@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ACME Signal CRM",
-    "slug": "acme-signal-crm",
+    "slug": "acme-demo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "40045408-5e10-4275-bfa5-2d13e165482d"
+      }
+    },
+    "owner": "qatech-demo"
   }
 }

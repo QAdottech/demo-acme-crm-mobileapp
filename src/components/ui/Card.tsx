@@ -9,7 +9,7 @@ interface CardProps {
 }
 
 export function Card({ children, onPress, style, className = '' }: CardProps) {
-  const baseClass = `bg-slate-800 rounded-2xl p-4 border border-slate-700/50 ${className}`;
+  const baseClass = `bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700/50 ${className}`;
 
   if (onPress) {
     return (
