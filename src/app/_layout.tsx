@@ -28,7 +28,7 @@ function RootLayoutNav() {
     } else if (session && !inAuthGroup) {
       router.replace('/(app)/(tabs)');
     }
-  }, [session, isLoading, segments]);
+  }, [session, isLoading, segments, router]);
 
   if (isLoading) {
     return <View className="flex-1 bg-slate-50 dark:bg-brand-900" />;

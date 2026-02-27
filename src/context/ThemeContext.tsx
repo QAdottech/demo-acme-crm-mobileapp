@@ -140,7 +140,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoaded) return;
     setColorScheme(isDark ? 'dark' : 'light');
-  }, [isDark, isLoaded]);
+  }, [isDark, isLoaded, setColorScheme]);
 
   const setThemeMode = useCallback((mode: ThemeMode) => {
     setThemeModeState(mode);
