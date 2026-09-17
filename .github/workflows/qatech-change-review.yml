@@ -94,10 +94,27 @@ jobs:
           FILE_NAME=$(basename "$APK_PATH")
           echo "Using APK $APK_PATH"
 
-          APPS_URL="https://api.qa.tech/v1/applications"
-          if [ -n "${QATECH_PROJECT_SHORT_ID:-}" ]; then
-            APPS_URL="${APPS_URL}?projectShortId=${QATECH_PROJECT_SHORT_ID}"
+          PROJECTS_JSON=$(curl -sSf -H "Authorization: Bearer $QATECH_API_TOKEN" "https://api.qa.tech/v1/projects")
+          echo "QA.tech projects:"
+          echo "$PROJECTS_JSON" | jq -r '.projects[] | "- \(.shortId) \(.name)"'
+          PROJECT_SHORT_ID="${QATECH_PROJECT_SHORT_ID:-}"
+          if [ -z "$PROJECT_SHORT_ID" ]; then
+            PROJECT_SHORT_ID=$(echo "$PROJECTS_JSON" | jq -r '
+              .projects
+              | if length == 1 then .[0].shortId
+                else
+                  (map(select(.name | test("ACME|Signal|CRM|mobile"; "i"))) | if length == 1 then .[0].shortId else empty end)
+                end
+            ')
           fi
+          if [ -z "$PROJECT_SHORT_ID" ] || [ "$PROJECT_SHORT_ID" = "null" ]; then
+            echo "::error::Could not resolve QATECH_PROJECT_SHORT_ID. Set it at https://github.com/${GITHUB_REPOSITORY}/settings/variables/actions"
+            exit 1
+          fi
+          echo "Using project $PROJECT_SHORT_ID"
+          echo "project_short_id=$PROJECT_SHORT_ID" >> "$GITHUB_OUTPUT"
+
+          APPS_URL="https://api.qa.tech/v1/applications?projectShortId=${PROJECT_SHORT_ID}"
           APPS_JSON=$(curl -sSf -H "Authorization: Bearer $QATECH_API_TOKEN" "$APPS_URL")
           echo "QA.tech applications:"
           echo "$APPS_JSON" | jq -r '.applications[] | "- \(.shortId) \(.kind) \(.name)"'
@@ -158,26 +175,44 @@ jobs:
           echo "Uploaded $BUILD_SHORT_ID"
           echo "build_short_id=$BUILD_SHORT_ID" >> "$GITHUB_OUTPUT"
 
+          APPS_CONFIG=$(jq -n --arg app "$APP_ID" --arg build "$BUILD_SHORT_ID" \
+            '{applications: {($app): {environment: {applicationBuildShortId: $build}}}}')
+          for OTHER_APP in $(echo "$APPS_JSON" | jq -r --arg mobile "$APP_ID" '.applications[] | select(.shortId != $mobile) | .shortId'); do
+            ENVS_JSON=$(curl -sSf -H "Authorization: Bearer $QATECH_API_TOKEN" \
+              "https://api.qa.tech/v1/applications/${OTHER_APP}/environments?projectShortId=${PROJECT_SHORT_ID}")
+            echo "Environments for $OTHER_APP:"
+            echo "$ENVS_JSON" | jq -r '.environments[] | "- \(.shortId) \(.name) production=\(.isProduction)"'
+            ENV_ID=$(echo "$ENVS_JSON" | jq -r '
+              .environments
+              | (map(select(.isProduction == false)) | if length > 0 then .[0].shortId else empty end) as $nonprod
+              | if $nonprod != "" then $nonprod
+                elif length > 0 then .[0].shortId
+                else empty end
+            ')
+            if [ -z "$ENV_ID" ] || [ "$ENV_ID" = "null" ]; then
+              echo "::warning::No environment found for $OTHER_APP; skipping override"
+              continue
+            fi
+            APPS_CONFIG=$(echo "$APPS_CONFIG" | jq -c --arg app "$OTHER_APP" --arg env "$ENV_ID" \
+              '.applications[$app] = {environment: {shortId: $env}}')
+          done
+          APPS_CONFIG=$(echo "$APPS_CONFIG" | jq -c .)
+          echo "applications_config=$APPS_CONFIG"
+          echo "applications_config=$APPS_CONFIG" >> "$GITHUB_OUTPUT"
+
       - name: Start QA.tech change review
         id: review
-        uses: QAdottech/run-action/change-review@v3
+        uses: QAdottech/run-action/change-review@v4
         with:
           api_token: ${{ secrets.QATECH_API_TOKEN }}
+          project_short_id: ${{ steps.upload.outputs.project_short_id }}
           context: |
             ACME Signal CRM is a native Expo / React Native demo. Review this
             PR against the uploaded Android emulator build, not a web URL.
             Demo login: demo@acme.com / demo1234.
             User-facing flows: sign in, pipeline board, deal details, settings.
           applications_config: |
-            {
-              "applications": {
-                "${{ steps.upload.outputs.app_short_id }}": {
-                  "environment": {
-                    "applicationBuildShortId": "${{ steps.upload.outputs.build_short_id }}"
-                  }
-                }
-              }
-            }
+            ${{ steps.upload.outputs.applications_config }}
 
       - name: Change review started
         if: always() && steps.review.outcome != 'skipped'
