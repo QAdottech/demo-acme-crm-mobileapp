@@ -31,6 +31,7 @@ jobs:
   # ------------------------------------------------------------------
   build-android:
     name: Build Android (APK)
+    if: github.event_name == 'push'
     needs: quality-check
     runs-on: ubuntu-latest
     steps:
@@ -52,6 +53,7 @@ jobs:
   # ------------------------------------------------------------------
   build-ios:
     name: Build iOS
+    if: github.event_name == 'push'
     needs: quality-check
     runs-on: ubuntu-latest
     steps:

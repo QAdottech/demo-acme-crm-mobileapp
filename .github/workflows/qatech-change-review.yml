@@ -55,6 +55,18 @@ jobs:
             yes | "$SDKMANAGER" --licenses >/dev/null || true
           fi
 
+      - name: Setup Android NDK
+        if: steps.apk-cache.outputs.cache-hit != 'true'
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r27b
+          link-to-sdk: true
+
+      - name: Export NDK path
+        if: steps.apk-cache.outputs.cache-hit != 'true'
+        run: echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> "$GITHUB_ENV"
+
       - name: Free disk space
         if: steps.apk-cache.outputs.cache-hit != 'true'
         run: |
