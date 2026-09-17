@@ -1,0 +1,174 @@
+# Upload the PR's Android emulator APK and start a QA.tech change review
+# pinned to that binary. See https://docs.qa.tech/configuration/mobile-pr-testing
+name: QA.tech mobile change review
+
+on:
+  pull_request:
+
+concurrency:
+  group: qatech-change-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Change review
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          df -h
+
+      - run: npm ci
+
+      - name: Prebuild Android project
+        run: npx expo prebuild --platform android --non-interactive --no-install
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build debug APK
+        working-directory: android
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload build to QA.tech
+        id: upload
+        env:
+          QATECH_API_TOKEN: ${{ secrets.QATECH_API_TOKEN }}
+          QATECH_APP_SHORT_ID: ${{ vars.QATECH_APP_SHORT_ID }}
+          QATECH_PROJECT_SHORT_ID: ${{ vars.QATECH_PROJECT_SHORT_ID }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${QATECH_API_TOKEN:-}" ]; then
+            echo "::error::Missing secret QATECH_API_TOKEN. Add it at https://github.com/${GITHUB_REPOSITORY}/settings/secrets/actions"
+            exit 1
+          fi
+
+          APK_PATH=$(find android -path '*/outputs/apk/debug/*.apk' | head -n 1)
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "::error::Debug APK not found after assembleDebug"
+            find android -name '*.apk' || true
+            exit 1
+          fi
+          FILE_NAME=$(basename "$APK_PATH")
+          echo "Using APK $APK_PATH"
+
+          APPS_URL="https://api.qa.tech/v1/applications"
+          if [ -n "${QATECH_PROJECT_SHORT_ID:-}" ]; then
+            APPS_URL="${APPS_URL}?projectShortId=${QATECH_PROJECT_SHORT_ID}"
+          fi
+          APPS_JSON=$(curl -sSf -H "Authorization: Bearer $QATECH_API_TOKEN" "$APPS_URL")
+          echo "QA.tech applications:"
+          echo "$APPS_JSON" | jq -r '.applications[] | "- \(.shortId) \(.kind) \(.name)"'
+
+          APP_ID="${QATECH_APP_SHORT_ID:-}"
+          if [ -z "$APP_ID" ]; then
+            APP_ID=$(echo "$APPS_JSON" | jq -r '
+              .applications
+              | (map(select(.kind == "MOBILE_APPLICATION" or (.kind | test("MOBILE"; "i")))) ) as $mobile
+              | if ($mobile | length) == 1 then $mobile[0].shortId
+                elif length == 1 then .[0].shortId
+                else
+                  (map(select(.name | test("ACME|Signal|CRM|mobile"; "i"))) | if length == 1 then .[0].shortId else empty end)
+                end
+            ')
+          fi
+
+          if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
+            echo "::error::Could not resolve a QA.tech mobile application short ID. Set repository variable QATECH_APP_SHORT_ID at https://github.com/${GITHUB_REPOSITORY}/settings/variables/actions"
+            exit 1
+          fi
+          if [[ ! "$APP_ID" =~ ^app ]]; then
+            echo "::error::Invalid application short ID: $APP_ID"
+            exit 1
+          fi
+          echo "Using application $APP_ID"
+          echo "app_short_id=$APP_ID" >> "$GITHUB_OUTPUT"
+
+          UPLOAD_RESPONSE=$(jq -n --arg fileName "$FILE_NAME" '{fileName: $fileName}' | curl -sSf -X POST \
+            "https://api.qa.tech/v1/applications/$APP_ID/builds/upload-url" \
+            -H "Authorization: Bearer $QATECH_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @-)
+          UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | jq -r '.uploadUrl')
+          BUILD_TOKEN=$(echo "$UPLOAD_RESPONSE" | jq -r '.buildToken')
+          if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" = "null" ] || [ -z "$BUILD_TOKEN" ] || [ "$BUILD_TOKEN" = "null" ]; then
+            echo "::error::Failed to get QA.tech upload URL"
+            echo "$UPLOAD_RESPONSE" | jq .
+            exit 1
+          fi
+
+          curl -sSf -X PUT "$UPLOAD_URL" \
+            --upload-file "$APK_PATH" \
+            -H "Content-Type: application/octet-stream"
+
+          BUILD_RESPONSE=$(jq -n --arg buildToken "$BUILD_TOKEN" '{platform: "android", buildToken: $buildToken}' | curl -sSf -X POST \
+            "https://api.qa.tech/v1/applications/$APP_ID/builds" \
+            -H "Authorization: Bearer $QATECH_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @-)
+          BUILD_SHORT_ID=$(echo "$BUILD_RESPONSE" | jq -r '.applicationBuildShortId')
+          if [ -z "$BUILD_SHORT_ID" ] || [ "$BUILD_SHORT_ID" = "null" ]; then
+            echo "::error::Failed to create QA.tech application build"
+            echo "$BUILD_RESPONSE" | jq .
+            exit 1
+          fi
+
+          echo "Uploaded $BUILD_SHORT_ID"
+          echo "build_short_id=$BUILD_SHORT_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Start QA.tech change review
+        id: review
+        uses: QAdottech/run-action/change-review@v3
+        with:
+          api_token: ${{ secrets.QATECH_API_TOKEN }}
+          context: |
+            ACME Signal CRM is a native Expo / React Native demo. Review this
+            PR against the uploaded Android emulator build, not a web URL.
+            Demo login: demo@acme.com / demo1234.
+            User-facing flows: sign in, pipeline board, deal details, settings.
+          applications_config: |
+            {
+              "applications": {
+                "${{ steps.upload.outputs.app_short_id }}": {
+                  "environment": {
+                    "applicationBuildShortId": "${{ steps.upload.outputs.build_short_id }}"
+                  }
+                }
+              }
+            }
+
+      - name: Change review started
+        if: always() && steps.review.outcome != 'skipped'
+        run: |
+          echo "chat_created=${{ steps.review.outputs.chat_created }}"
+          echo "chat_short_id=${{ steps.review.outputs.chat_short_id }}"
+          echo "chat_url=${{ steps.review.outputs.chat_url }}"
