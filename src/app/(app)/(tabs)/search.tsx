@@ -94,7 +94,12 @@ export default function SearchScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12 }}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 12,
+          alignItems: 'center',
+        }}
       >
         {chips.map((chip) => {
           const selected = filter === chip.id;
@@ -106,7 +111,8 @@ export default function SearchScreen() {
               onPress={() => setFilter(chip.id)}
               accessibilityRole="button"
               accessibilityState={{ selected }}
-              className={`mr-2 rounded-full px-3.5 py-2 flex-row items-center ${
+              style={{ height: 36, alignSelf: 'center' }}
+              className={`mr-2 rounded-full px-3.5 flex-row items-center ${
                 selected
                   ? isOverdue
                     ? 'bg-red-500/20 border border-red-500/40'
@@ -169,9 +175,7 @@ export default function SearchScreen() {
             <SearchResultRow
               key={deal.id}
               deal={deal}
-              onPress={() =>
-                router.push(`/(app)/deal/${deal.id}` as `/${string}`)
-              }
+            onPress={() => router.push(`/deal/${deal.id}`)}
             />
           ))
         )}

@@ -62,7 +62,7 @@ export default function PipelineScreen() {
       {overdueCount > 0 && (
         <Pressable
           onPress={() =>
-            router.push('/(app)/(tabs)/search?filter=overdue' as `/${string}`)
+            router.push('/search?filter=overdue')
           }
           accessibilityLabel="View overdue deals"
           className="mx-4 mb-2 flex-row items-center bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 active:opacity-80"
@@ -78,9 +78,7 @@ export default function PipelineScreen() {
 
       {/* Pipeline Board */}
       <PipelineBoard
-        onDealPress={(dealId) =>
-          router.push(`/(app)/deal/${dealId}` as `/${string}`)
-        }
+        onDealPress={(dealId) => router.push(`/deal/${dealId}`)}
       />
     </View>
   );

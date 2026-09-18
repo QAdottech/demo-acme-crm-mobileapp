@@ -22,7 +22,7 @@ export function Header() {
         <Logo size="sm" />
         <View className="flex-row items-center">
           <Pressable
-            onPress={() => router.push('/(app)/(tabs)/search' as `/${string}`)}
+            onPress={() => router.push('/search')}
             accessibilityLabel="Search deals"
             className="w-9 h-9 rounded-full bg-slate-800 items-center justify-center mr-2"
           >
