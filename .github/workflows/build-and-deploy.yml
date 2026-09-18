@@ -3,6 +3,8 @@ name: Build and Deploy
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -29,6 +31,7 @@ jobs:
   # ------------------------------------------------------------------
   build-android:
     name: Build Android (APK)
+    if: github.event_name == 'push'
     needs: quality-check
     runs-on: ubuntu-latest
     steps:
@@ -50,6 +53,7 @@ jobs:
   # ------------------------------------------------------------------
   build-ios:
     name: Build iOS
+    if: github.event_name == 'push'
     needs: quality-check
     runs-on: ubuntu-latest
     steps:
@@ -71,6 +75,7 @@ jobs:
   # ------------------------------------------------------------------
   submit-testflight:
     name: Submit to TestFlight
+    if: github.event_name == 'push'
     needs: build-ios
     runs-on: ubuntu-latest
     steps:
@@ -92,6 +97,7 @@ jobs:
   # ------------------------------------------------------------------
   submit-google-play:
     name: Submit to Google Play (Internal)
+    if: github.event_name == 'push'
     needs: build-android
     runs-on: ubuntu-latest
     steps:
@@ -107,25 +113,3 @@ jobs:
       - run: npm ci
       - name: Submit to Google Play Store
         run: eas submit --platform android --profile production --non-interactive --latest
-
-  # ------------------------------------------------------------------
-  # Job 6: Upload to QA.tech for testing (placeholder)
-  # ------------------------------------------------------------------
-  upload-qatech:
-    name: Upload to QA.tech
-    needs: [build-android, build-ios]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Upload to QA.tech for testing
-        env:
-          QATECH_API_TOKEN: ${{ secrets.QATECH_API_TOKEN }}
-        run: |
-          echo "=== QA.tech Upload Placeholder ==="
-          echo "This step will upload the built APK/IPA to QA.tech for automated testing."
-          echo "TODO: Integrate QA.tech upload API when details are provided."
-          echo ""
-          echo "Expected integration:"
-          echo "  - Download built artifacts from EAS"
-          echo "  - Upload to QA.tech API endpoint"
-          echo "  - Trigger automated test runs"
