@@ -40,18 +40,34 @@ export function useStorageState(key: string): UseStateHook<string> {
   const [state, setState] = useAsyncState<string>();
 
   useEffect(() => {
+    let cancelled = false;
+
+    const finish = (value: string | null) => {
+      if (!cancelled) setState(value);
+    };
+
     if (Platform.OS === 'web') {
       try {
-        const value = localStorage.getItem(key);
-        setState(value);
+        finish(localStorage.getItem(key));
       } catch {
         console.error('localStorage is unavailable');
+        finish(null);
       }
-    } else {
-      SecureStore.getItemAsync(key).then((value) => {
-        setState(value);
-      });
+      return () => {
+        cancelled = true;
+      };
     }
+
+    const timeout = setTimeout(() => finish(null), 1500);
+    SecureStore.getItemAsync(key)
+      .then((value) => finish(value))
+      .catch(() => finish(null))
+      .finally(() => clearTimeout(timeout));
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [key]);
 
   const setValue = useCallback(
