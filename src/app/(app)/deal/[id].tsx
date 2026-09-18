@@ -4,11 +4,19 @@ import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { usePipeline } from '@/context/PipelineContext';
 import { PIPELINE_STAGES } from '@/data/stages';
-import { formatCurrency, formatDate, getTimeAgo } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  getTimeAgo,
+  isDealOverdue,
+  toMailtoUrl,
+  toTelUrl,
+} from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ACTIVITY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -96,8 +104,13 @@ export default function DealDetailScreen() {
       <View className="px-4 mt-3">
         <Card>
           <Text className="text-slate-400 text-xs mb-1">Expected Close</Text>
-          <Text className="text-white text-base font-semibold">
+          <Text
+            className={`text-base font-semibold ${
+              isDealOverdue(deal) ? 'text-red-400' : 'text-white'
+            }`}
+          >
             {formatDate(deal.expectedCloseDate)}
+            {isDealOverdue(deal) ? ' · Overdue' : ''}
           </Text>
         </Card>
       </View>
@@ -124,6 +137,30 @@ export default function DealDetailScreen() {
                 {deal.contactPhone}
               </Text>
             </View>
+          </View>
+          <View className="flex-row mt-4 gap-3">
+            <Pressable
+              onPress={() => Linking.openURL(toTelUrl(deal.contactPhone))}
+              accessibilityLabel={`Call ${deal.contactName}`}
+              className="flex-1 flex-row items-center justify-center bg-slate-700 rounded-xl py-3 active:opacity-80"
+            >
+              <Ionicons name="call-outline" size={16} color="#A5B4FC" />
+              <Text className="text-brand-300 font-semibold text-sm ml-2">
+                Call
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                Linking.openURL(toMailtoUrl(deal.contactEmail, deal.name))
+              }
+              accessibilityLabel={`Email ${deal.contactName}`}
+              className="flex-1 flex-row items-center justify-center bg-slate-700 rounded-xl py-3 active:opacity-80"
+            >
+              <Ionicons name="mail-outline" size={16} color="#A5B4FC" />
+              <Text className="text-brand-300 font-semibold text-sm ml-2">
+                Email
+              </Text>
+            </Pressable>
           </View>
         </Card>
       </View>

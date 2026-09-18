@@ -2,15 +2,16 @@ import { Header } from '@/components/layout/Header';
 import { PipelineBoard } from '@/components/pipeline/PipelineBoard';
 import { Card } from '@/components/ui/Card';
 import { usePipeline } from '@/context/PipelineContext';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, isDealOverdue } from '@/lib/utils';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 export default function PipelineScreen() {
   const router = useRouter();
   const { deals, getTotalValue, getDealsWon } = usePipeline();
+  const overdueCount = deals.filter((deal) => isDealOverdue(deal)).length;
 
   const stats = [
     {
@@ -57,6 +58,23 @@ export default function PipelineScreen() {
           </Card>
         ))}
       </View>
+
+      {overdueCount > 0 && (
+        <Pressable
+          onPress={() =>
+            router.push('/(app)/(tabs)/search?filter=overdue' as `/${string}`)
+          }
+          accessibilityLabel="View overdue deals"
+          className="mx-4 mb-2 flex-row items-center bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 active:opacity-80"
+        >
+          <Ionicons name="alert-circle" size={16} color="#F87171" />
+          <Text className="text-red-300 text-sm font-medium ml-2 flex-1">
+            {overdueCount} {overdueCount === 1 ? 'deal is' : 'deals are'} past
+            expected close
+          </Text>
+          <Text className="text-red-400 text-xs font-semibold">Review</Text>
+        </Pressable>
+      )}
 
       {/* Pipeline Board */}
       <PipelineBoard
