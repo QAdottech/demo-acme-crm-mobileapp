@@ -62,7 +62,7 @@ export default function PipelineScreen() {
       {overdueCount > 0 && (
         <Pressable
           onPress={() =>
-            router.push('/search?filter=overdue')
+            router.push({ pathname: '/search', params: { filter: 'overdue' } })
           }
           accessibilityLabel="View overdue deals"
           className="mx-4 mb-2 flex-row items-center bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 active:opacity-80"

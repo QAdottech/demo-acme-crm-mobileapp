@@ -21,17 +21,20 @@ export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { deals } = usePipeline();
-  const params = useLocalSearchParams<{ filter?: string }>();
+  const params = useLocalSearchParams<{ filter?: string | string[] }>();
+  const filterParam = Array.isArray(params.filter)
+    ? params.filter[0]
+    : params.filter;
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<SearchFilter>(
-    params.filter === 'overdue' ? 'overdue' : 'all'
+    filterParam === 'overdue' ? 'overdue' : 'all'
   );
 
   useEffect(() => {
-    if (params.filter === 'overdue') {
+    if (filterParam === 'overdue') {
       setFilter('overdue');
     }
-  }, [params.filter]);
+  }, [filterParam]);
 
   const overdueCount = useMemo(
     () => deals.filter((deal) => isDealOverdue(deal)).length,

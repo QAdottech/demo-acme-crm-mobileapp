@@ -1,7 +1,7 @@
 import '../../global.css';
 import { SessionProvider, useSession } from '@/context/AuthContext';
 import { PipelineProvider } from '@/context/PipelineContext';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -9,24 +9,17 @@ import { View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
+export const unstable_settings = {
+  initialRouteName: 'sign-in',
+};
+
 function RootLayoutNav() {
   const { session, isLoading } = useSession();
-  const segments = useSegments();
-  const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
-
-    SplashScreen.hideAsync();
-
-    const inAuthGroup = segments[0] === '(app)';
-
-    if (!session && inAuthGroup) {
-      router.replace('/sign-in');
-    } else if (session && !inAuthGroup) {
-      router.replace('/(app)/(tabs)');
-    }
-  }, [session, isLoading, segments]);
+    void SplashScreen.hideAsync();
+  }, [isLoading]);
 
   if (isLoading) {
     return <View className="flex-1 bg-brand-900" />;
@@ -35,7 +28,20 @@ function RootLayoutNav() {
   return (
     <>
       <StatusBar style="light" />
-      <Slot />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#0F172A' },
+          animation: 'fade',
+        }}
+      >
+        <Stack.Protected guard={!!session}>
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!session}>
+          <Stack.Screen name="sign-in" />
+        </Stack.Protected>
+      </Stack>
     </>
   );
 }

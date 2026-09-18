@@ -2,11 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        lazy: true,
         tabBarStyle: {
           backgroundColor: '#0F172A',
           borderTopColor: '#1E293B',
