@@ -1,3 +1,5 @@
+import type { Deal } from '@/lib/types';
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -5,6 +7,33 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+export function searchDeals(deals: Deal[], query: string): Deal[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return deals;
+
+  return deals.filter((deal) =>
+    [deal.name, deal.company, deal.contactName, deal.contactEmail].some(
+      (field) => field.toLowerCase().includes(q)
+    )
+  );
+}
+
+export function isDealOverdue(deal: Deal, now: Date = new Date()): boolean {
+  if (deal.stage === 'customer') return false;
+  const close = new Date(`${deal.expectedCloseDate}T00:00:00`);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return close < today;
+}
+
+export function toTelUrl(phone: string): string {
+  return `tel:${phone.replace(/[^\d+]/g, '')}`;
+}
+
+export function toMailtoUrl(email: string, subject?: string): string {
+  const params = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+  return `mailto:${email}${params}`;
 }
 
 export function formatDate(dateString: string): string {

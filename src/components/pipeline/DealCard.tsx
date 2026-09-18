@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, isDealOverdue } from '@/lib/utils';
 import type { Deal } from '@/lib/types';
 
 interface DealCardProps {
@@ -30,6 +30,9 @@ export function DealCard({ deal, stageColor, onPress }: DealCardProps) {
         <Text className="text-slate-300 text-xs ml-2 flex-1" numberOfLines={1}>
           {deal.contactName}
         </Text>
+        {isDealOverdue(deal) && (
+          <Text className="text-red-400 text-[10px] font-semibold">Overdue</Text>
+        )}
       </View>
 
       {/* Probability bar */}
